@@ -201,7 +201,9 @@ class ActiveRecord::Base
     def self.paranoia_scope
       where(table_name => { paranoia_column => paranoia_sentinel_value })
     end
-    default_scope { paranoia_scope }
+    default_scope { paranoia_scope } if options.fetch(:default_scope, true)
+
+    scope :without_deleted, -> { paranoia_scope }
 
     before_restore {
       self.class.notify_observers(:before_restore, self) if self.class.respond_to?(:notify_observers)

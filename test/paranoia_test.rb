@@ -15,6 +15,7 @@ def setup!
   {
     'parent_model_with_counter_cache_columns' => 'related_models_count INTEGER DEFAULT 0',
     'parent_models' => 'deleted_at DATETIME',
+    'without_default_scopes' => 'deleted_at DATETIME',
     'paranoid_models' => 'parent_model_id INTEGER, deleted_at DATETIME',
     'paranoid_model_with_belongs' => 'parent_model_id INTEGER, deleted_at DATETIME, paranoid_model_with_has_one_id INTEGER',
     'paranoid_model_with_build_belongs' => 'parent_model_id INTEGER, deleted_at DATETIME, paranoid_model_with_has_one_and_build_id INTEGER, name VARCHAR(32)',
@@ -785,6 +786,20 @@ class ParanoiaTest < test_framework
     # assert related_model.instance_variable_get(:@after_commit_on_destroy_callback_called)
   end
 
+  def test_not_defines_default_scope_if_specified_option_passed
+    model = WithoutDefaultScope.create
+    model.destroy
+
+    assert_equal 1, WithoutDefaultScope.all.count
+  end
+
+  def test_without_deleted_scope
+    model = WithoutDefaultScope.create
+    model.destroy
+
+    assert_equal 0, WithoutDefaultScope.without_deleted.count
+  end
+
   # TODO: find a fix for Rails 4.1
   if ActiveRecord::VERSION::STRING !~ /\A4\.1/
     def test_counter_cache_column_update_on_really_destroy
@@ -867,6 +882,10 @@ class ParentModel < ActiveRecord::Base
   has_one :non_paranoid_model, dependent: :destroy
   has_many :asplode_models, dependent: :destroy
   has_one :polymorphic_model, as: :parent, dependent: :destroy
+end
+
+class WithoutDefaultScope < ActiveRecord::Base
+  acts_as_paranoid default_scope: false
 end
 
 class ParentModelWithCounterCacheColumn < ActiveRecord::Base
